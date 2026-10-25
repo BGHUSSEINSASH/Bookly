@@ -1,11 +1,12 @@
 [build]
   base    = "."
-  command = "npm install && npm run build --workspace @bookly/shared && npm run build --workspace @bookly/web"
+  command = "npm install --include=dev && npm run build --workspace @bookly/web"
   publish = "apps/web/.next"
 
 [build.environment]
-  NODE_VERSION = "20"
-  NPM_FLAGS    = "--legacy-peer-deps"
+  NODE_VERSION   = "20"
+  NODE_ENV       = "development"
+  NPM_FLAGS      = "--legacy-peer-deps"
 
 [[plugins]]
   package = "@netlify/plugin-nextjs"
