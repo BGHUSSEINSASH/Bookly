@@ -1,9 +1,0 @@
-{
-  "framework": "nextjs",
-  "buildCommand": "cd ../.. && npm run build --workspace @bookly/web",
-  "outputDirectory": ".next",
-  "installCommand": "cd ../.. && npm install",
-  "env": {
-    "NEXT_PUBLIC_API_URL": "@api_url"
-  }
-}
