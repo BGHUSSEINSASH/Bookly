@@ -1,0 +1,33 @@
+{
+  "name": "bookly",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Bookly — منصة حجز المزارع والفنادق والطيران والأنشطة السياحية",
+  "workspaces": [
+    "apps/api",
+    "apps/web",
+    "packages/shared"
+  ],
+  "scripts": {
+    "dev:api": "npm run start:dev --workspace @bookly/api",
+    "dev:web": "npm run dev --workspace @bookly/web",
+    "build": "npm run build --workspace @bookly/shared && npm run build --workspace @bookly/api && npm run build --workspace @bookly/web",
+    "typecheck": "npm run typecheck --workspace @bookly/shared && npm run typecheck --workspace @bookly/api && npm run typecheck --workspace @bookly/web",
+    "lint": "npm run lint --workspace @bookly/api && npm run lint --workspace @bookly/web",
+    "db:migrate": "npm run prisma:migrate --workspace @bookly/api",
+    "db:seed": "npm run prisma:seed --workspace @bookly/api",
+    "db:reset": "npm run prisma:reset --workspace @bookly/api",
+    "docker:up": "docker compose up -d postgres",
+    "docker:down": "docker compose down",
+    "setup": "npm install && npm run db:migrate && npm run db:seed"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "allowScripts": {
+    "prisma": true,
+    "@prisma/client": true,
+    "@prisma/engines": true,
+    "unrs-resolver": true
+  }
+}

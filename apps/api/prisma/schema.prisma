@@ -1,0 +1,964 @@
+// Bookly — مخطط قاعدة البيانات (PostgreSQL)
+// طبقة المنصة: Users / Vendors / Catalog / Bookings / Money / Loyalty
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─────────────────────────────── الهوية والجغرافيا ───────────────────────────────
+
+enum UserRole {
+  CUSTOMER
+  FARM_OWNER
+  HOTEL_MANAGER
+  TRAVEL_AGENCY
+  VENDOR
+  ADMIN
+  SUPER_ADMIN
+}
+
+enum UserStatus {
+  ACTIVE
+  PENDING_VERIFICATION
+  SUSPENDED
+  DELETED
+}
+
+enum VendorType {
+  FARM
+  HOTEL
+  CAR_RENTAL
+  TRAVEL_AGENCY
+  AIRLINE
+  MIXED
+}
+
+enum VendorStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  SUSPENDED
+}
+
+enum CountryCode {
+  IQ
+  SA
+  AE
+  KW
+  QA
+  BH
+  OM
+  JO
+  EG
+  TR
+  US
+  GB
+  FR
+  DE
+  ES
+  OTHER
+}
+
+enum MediaType {
+  IMAGE
+  VIDEO
+}
+
+model Country {
+  id         String      @id @default(cuid())
+  code       CountryCode @unique
+  nameAr     String
+  nameEn     String
+  currency   String
+  phoneCode  String?
+  cities     City[]
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+model City {
+  id          String     @id @default(cuid())
+  slug        String     @unique
+  nameAr      String
+  nameEn      String
+  countryId   String
+  country     Country    @relation(fields: [countryId], references: [id], onDelete: Cascade)
+  latitude    Float?
+  longitude   Float?
+  timezone    String     @default("Asia/Baghdad")
+  isPopular   Boolean    @default(false)
+  isActive    Boolean    @default(true)
+  properties  Property[]
+  airports    Airport[]
+  trips       Trip[]
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  @@index([countryId])
+  @@index([isPopular])
+}
+
+model Airport {
+  id         String   @id @default(cuid())
+  iataCode   String   @unique
+  nameAr     String
+  nameEn     String
+  cityId     String
+  city       City     @relation(fields: [cityId], references: [id], onDelete: Cascade)
+  departures Flight[] @relation("FlightFrom")
+  arrivals   Flight[] @relation("FlightTo")
+  createdAt  DateTime @default(now())
+
+  @@index([cityId])
+}
+
+// ─────────────────────────────── المستخدم والمزوّد ───────────────────────────────
+
+model User {
+  id               String      @id @default(cuid())
+  email            String      @unique
+  phone            String?     @unique
+  passwordHash     String
+  fullName         String
+  avatarUrl        String?
+  role             UserRole    @default(CUSTOMER)
+  status           UserStatus  @default(ACTIVE)
+  locale           String      @default("ar")
+  preferredCurrency String     @default("IQD")
+  emailVerifiedAt  DateTime?
+  phoneVerifiedAt  DateTime?
+
+  loyaltyPoints    Int         @default(0)
+  lifetimeSpent    Decimal     @default(0) @db.Decimal(14, 2)
+  tier             String      @default("BRONZE")
+
+  lastLoginAt      DateTime?
+  createdAt        DateTime    @default(now())
+  updatedAt        DateTime    @updatedAt
+  deletedAt        DateTime?
+
+  vendorProfile    VendorProfile?
+  refreshTokens    RefreshToken[]
+  otpCodes         OtpCode[]
+  bookings         Booking[]
+  reviews          Review[]
+  wallet           Wallet?
+  loyaltyEntries   LoyaltyEntry[]
+  notifications    Notification[]
+  deviceTokens     DeviceToken[]
+  tickets          SupportTicket[]
+  favorites        Favorite[]
+  couponsUsed      CouponRedemption[]
+  media            Media[]
+  auditLogs        AdminAction[]
+  assignedTickets  SupportTicket[] @relation("TicketAssignee")
+
+  @@index([role])
+  @@index([status])
+}
+
+model RefreshToken {
+  id        String    @id @default(cuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash String    @unique
+  expiresAt DateTime
+  revokedAt DateTime?
+  userAgent String?
+  ip        String?
+  createdAt DateTime  @default(now())
+
+  @@index([userId])
+}
+
+model OtpCode {
+  id        String    @id @default(cuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  code      String
+  purpose   String
+  expiresAt DateTime
+  consumedAt DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([userId, purpose])
+}
+
+model VendorProfile {
+  id             String       @id @default(cuid())
+  userId         String       @unique
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type           VendorType
+  status         VendorStatus @default(PENDING)
+  companyName    String
+  legalName      String?
+  taxNumber      String?
+  commercialReg  String?
+  phone          String
+  email          String?
+  logoUrl        String?
+  description    String?
+  commissionRate Decimal      @default(12) @db.Decimal(5, 2)
+  payoutAccount  String?
+  bankIban       String?
+  ratingAvg      Decimal      @default(0) @db.Decimal(3, 2)
+  ratingCount    Int          @default(0)
+  properties     Property[]
+  cars           Car[]
+  trips          Trip[]
+  bookings       Booking[]
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  @@index([status])
+}
+
+model Media {
+  id        String    @id @default(cuid())
+  ownerId   String?
+  owner     User?     @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  url       String
+  key       String?
+  type      MediaType @default(IMAGE)
+  mimeType  String?
+  width     Int?
+  height    Int?
+  blurhash  String?
+  sortOrder Int       @default(0)
+  createdAt DateTime  @default(now())
+
+  propertyImages  PropertyImage[]
+  roomImages      RoomTypeImage[]
+  carImages       CarImage[]
+  tripImages      TripImage[]
+  reviewImages    ReviewImage[]
+
+  @@index([ownerId])
+}
+
+// ─────────────────────────────── الكتالوج ───────────────────────────────
+
+enum PropertyCategory {
+  FARM
+  CHALET
+  REST
+  HOTEL
+  APARTMENT
+}
+
+enum PropertyStatus {
+  DRAFT
+  PENDING_REVIEW
+  PUBLISHED
+  REJECTED
+  SUSPENDED
+}
+
+enum BookingMode {
+  NIGHT
+  HOUR
+  DAY
+}
+
+model Property {
+  id             String           @id @default(cuid())
+  vendorId       String
+  vendor         VendorProfile    @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+  category       PropertyCategory
+  title          String
+  slug           String           @unique
+  summary        String?
+  description    String?
+  cityId         String
+  city           City             @relation(fields: [cityId], references: [id], onDelete: Cascade)
+  address        String?
+  latitude       Float?
+  longitude      Float?
+  starRating     Int?
+  currency       String           @default("IQD")
+  pricePerNight  Decimal          @db.Decimal(12, 2)
+  pricePerHour   Decimal?         @db.Decimal(12, 2)
+  pricePerDay    Decimal?         @db.Decimal(12, 2)
+  bookingMode    BookingMode      @default(NIGHT)
+  minNights      Int              @default(1)
+  maxGuests      Int              @default(4)
+  bedrooms       Int              @default(0)
+  bathrooms      Int              @default(0)
+  areaSqm        Int?
+  capacity       Int?
+  checkInTime    String           @default("15:00")
+  checkOutTime   String           @default("12:00")
+  amenities      String[]         @default([])
+  rules          String[]         @default([])
+  highlights     String[]         @default([])
+  badgeLabel     String?
+  negotiable     Boolean          @default(false)
+  isInstantBook  Boolean          @default(true)
+  hasVideo       Boolean          @default(false)
+  status         PropertyStatus   @default(DRAFT)
+  ratingAvg      Decimal          @default(0) @db.Decimal(3, 2)
+  ratingCount    Int              @default(0)
+  viewsCount     Int              @default(0)
+  publishedAt    DateTime?
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+
+  images      PropertyImage[]
+  roomTypes   RoomType[]
+  bookings    Booking[]
+  reviews     Review[]
+  favorites   Favorite[]
+  seasonal    SeasonalOffer[]
+  amenitiesRef PropertyAmenity[]
+
+  @@index([status, category])
+  @@index([cityId])
+  @@index([vendorId])
+  @@index([pricePerNight])
+}
+
+model PropertyImage {
+  id         String   @id @default(cuid())
+  propertyId String
+  property   Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  mediaId    String
+  media      Media    @relation(fields: [mediaId], references: [id], onDelete: Cascade)
+  sortOrder  Int      @default(0)
+
+  @@index([propertyId])
+}
+
+model PropertyAmenity {
+  id         String   @id @default(cuid())
+  propertyId String
+  property   Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  key        String
+  labelAr    String
+  icon       String?
+
+  @@index([propertyId])
+}
+
+model RoomType {
+  id             String   @id @default(cuid())
+  propertyId     String
+  property       Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  name           String
+  description    String?
+  bedType        String?
+  maxGuests      Int      @default(2)
+  pricePerNight  Decimal  @db.Decimal(12, 2)
+  currency       String   @default("IQD")
+  breakfastIncluded Boolean @default(false)
+  totalRooms     Int      @default(1)
+  availableRooms Int      @default(1)
+  amenities      String[] @default([])
+  isRefundable   Boolean  @default(true)
+  images         RoomTypeImage[]
+  bookings       Booking[]
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([propertyId])
+}
+
+model RoomTypeImage {
+  id        String   @id @default(cuid())
+  roomTypeId String
+  roomType  RoomType @relation(fields: [roomTypeId], references: [id], onDelete: Cascade)
+  mediaId   String
+  media     Media    @relation(fields: [mediaId], references: [id], onDelete: Cascade)
+  sortOrder Int      @default(0)
+}
+
+model SeasonalOffer {
+  id             String   @id @default(cuid())
+  propertyId     String
+  property       Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  title          String
+  discountPercent Decimal @db.Decimal(5, 2)
+  startDate      DateTime
+  endDate        DateTime
+  isActive       Boolean  @default(true)
+  createdAt      DateTime @default(now())
+
+  @@index([propertyId])
+}
+
+// ─────────────────────────────── الطيران ───────────────────────────────
+
+enum CabinClass {
+  ECONOMY
+  PREMIUM_ECONOMY
+  BUSINESS
+  FIRST
+}
+
+model Airline {
+  id         String   @id @default(cuid())
+  iataCode   String   @unique
+  nameAr     String
+  nameEn     String
+  logoUrl    String?
+  flights    Flight[]
+  createdAt  DateTime @default(now())
+}
+
+model Flight {
+  id                String      @id @default(cuid())
+  flightNumber      String
+  airlineId         String
+  airline           Airline     @relation(fields: [airlineId], references: [id])
+  fromAirportId     String
+  fromAirport       Airport     @relation("FlightFrom", fields: [fromAirportId], references: [id])
+  toAirportId       String
+  toAirport         Airport     @relation("FlightTo", fields: [toAirportId], references: [id])
+  departureTime     DateTime
+  arrivalTime       DateTime
+  durationMinutes   Int
+  stops             Int         @default(0)
+  cabinPrices       Json?
+  baggageAllowance  Int         @default(0)
+  currency          String      @default("IQD")
+  status            String      @default("SCHEDULED")
+  bookings          Booking[]
+  createdAt         DateTime    @default(now())
+
+  @@index([fromAirportId, toAirportId, departureTime])
+}
+
+// ─────────────────────────────── تأجير السيارات ───────────────────────────────
+
+enum CarCategory {
+  ECONOMY
+  COMPACT
+  SEDAN
+  SUV
+  LUXURY
+  VAN
+  FAMILY
+  PICKUP
+}
+
+enum Transmission {
+  AUTOMATIC
+  MANUAL
+}
+
+enum FuelType {
+  PETROL
+  DIESEL
+  HYBRID
+  ELECTRIC
+  LPG
+}
+
+model Car {
+  id             String        @id @default(cuid())
+  vendorId       String
+  vendor         VendorProfile @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+  category       CarCategory
+  make           String
+  model          String
+  year           Int
+  color          String?
+  plateNumber    String?
+  transmission   Transmission  @default(AUTOMATIC)
+  fuelType       FuelType      @default(PETROL)
+  seats          Int           @default(5)
+  luggage        Int           @default(2)
+  dailyRate      Decimal       @db.Decimal(12, 2)
+  currency       String        @default("IQD")
+  airportPickup  Boolean       @default(true)
+  withDriver     Boolean       @default(false)
+  freeKmPerDay   Int           @default(200)
+  minRentalDays  Int           @default(1)
+  status         PropertyStatus @default(DRAFT)
+  ratingAvg      Decimal       @default(0) @db.Decimal(3, 2)
+  ratingCount    Int           @default(0)
+  images         CarImage[]
+  bookings       Booking[]
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  @@index([vendorId, status])
+  @@index([category])
+}
+
+model CarImage {
+  id        String   @id @default(cuid())
+  carId     String
+  car       Car      @relation(fields: [carId], references: [id], onDelete: Cascade)
+  mediaId   String
+  media     Media    @relation(fields: [mediaId], references: [id], onDelete: Cascade)
+  sortOrder Int      @default(0)
+}
+
+// ─────────────────────────────── الرحلات السياحية ───────────────────────────────
+
+enum TripType {
+  MARINE
+  SAFARI
+  MOUNTAIN
+  HERITAGE
+  DESERT
+  CITY
+  ADVENTURE
+}
+
+model TripImage {
+  id        String   @id @default(cuid())
+  tripId    String
+  trip      Trip     @relation(fields: [tripId], references: [id], onDelete: Cascade)
+  mediaId   String
+  media     Media    @relation(fields: [mediaId], references: [id], onDelete: Cascade)
+  sortOrder Int      @default(0)
+}
+
+model Trip {
+  id           String        @id @default(cuid())
+  vendorId     String
+  vendor       VendorProfile @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+  type         TripType
+  title        String
+  slug         String        @unique
+  summary      String?
+  description  String?
+  cityId       String?
+  city         City?         @relation(fields: [cityId], references: [id])
+  durationDays Int           @default(1)
+  pricePerPerson Decimal     @db.Decimal(12, 2)
+  currency     String        @default("IQD")
+  maxGuests    Int           @default(20)
+  minGuests    Int           @default(1)
+  includes     String[]      @default([])
+  itinerary    Json?
+  meetingPoint String?
+  status       PropertyStatus @default(DRAFT)
+  ratingAvg    Decimal       @default(0) @db.Decimal(3, 2)
+  ratingCount  Int           @default(0)
+  images       TripImage[]
+  bookings     Booking[]
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  @@index([status, type])
+}
+
+// ─────────────────────────────── الحجوزات ───────────────────────────────
+
+enum BookingStatus {
+  PENDING
+  CONFIRMED
+  COMPLETED
+  CANCELLED
+  REFUNDED
+  REJECTED
+  EXPIRED
+}
+
+enum PaymentStatus {
+  PENDING
+  AUTHORIZED
+  PAID
+  FAILED
+  REFUNDED
+  PARTIALLY_REFUNDED
+}
+
+model Booking {
+  id             String        @id @default(cuid())
+  code           String        @unique
+  customerId     String
+  customer       User          @relation(fields: [customerId], references: [id])
+  vendorId       String?
+  vendor         VendorProfile? @relation(fields: [vendorId], references: [id])
+
+  propertyId     String?
+  property       Property?     @relation(fields: [propertyId], references: [id])
+  roomTypeId     String?
+  roomType       RoomType?     @relation(fields: [roomTypeId], references: [id])
+  flightId       String?
+  flight         Flight?       @relation(fields: [flightId], references: [id])
+  carId          String?
+  car            Car?          @relation(fields: [carId], references: [id])
+  tripId         String?
+  trip           Trip?         @relation(fields: [tripId], references: [id])
+
+  status         BookingStatus @default(PENDING)
+  paymentStatus  PaymentStatus @default(PENDING)
+
+  checkIn        DateTime
+  checkOut       DateTime
+  guests         Int           @default(1)
+  quantity       Int           @default(1)
+  units          Int           @default(1)
+  nights         Int           @default(1)
+
+  subtotal       Decimal       @db.Decimal(12, 2)
+  discount       Decimal       @default(0) @db.Decimal(12, 2)
+  taxes          Decimal       @default(0) @db.Decimal(12, 2)
+  serviceFee     Decimal       @default(0) @db.Decimal(12, 2)
+  commission     Decimal       @default(0) @db.Decimal(12, 2)
+  total          Decimal       @db.Decimal(12, 2)
+  currency       String        @default("IQD")
+
+  couponCode     String?
+  pointsRedeemed Int           @default(0)
+  pointsEarned   Int           @default(0)
+
+  customerNote   String?
+  vendorNote     String?
+  cancelReason   String?
+  metadata       Json?
+
+  confirmedAt    DateTime?
+  cancelledAt    DateTime?
+  completedAt    DateTime?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  guestsDetail   BookingGuest[]
+  payments       Payment[]
+  review         Review?
+  walletTxns     WalletTransaction[]
+  loyaltyEntries LoyaltyEntry[]
+  couponUsage    CouponRedemption?
+
+  @@index([customerId, status])
+  @@index([vendorId, status])
+  @@index([propertyId, checkIn, checkOut])
+  @@index([createdAt])
+}
+
+model BookingGuest {
+  id        String  @id @default(cuid())
+  bookingId String
+  booking   Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  fullName  String
+  phone     String?
+  email     String?
+  nationalId String?
+  isPrimary Boolean @default(false)
+
+  @@index([bookingId])
+}
+
+// ─────────────────────────────── الدفع والمحفظة ───────────────────────────────
+
+enum PaymentMethod {
+  WALLET
+  VISA
+  MASTERCARD
+  APPLE_PAY
+  GOOGLE_PAY
+  PAYPAL
+  ZAIN_CASH
+  ASIA_HAWALA
+  FASTPAY
+  CASH_ON_SITE
+}
+
+enum PaymentProvider {
+  WALLET
+  STRIPE
+  PAYPAL
+  ZAIN_CASH
+  ASIA_HAWALA
+  FASTPAY
+  CASH
+}
+
+model Payment {
+  id             String          @id @default(cuid())
+  bookingId      String?
+  booking        Booking?        @relation(fields: [bookingId], references: [id])
+  customerId     String
+  provider       PaymentProvider
+  method         PaymentMethod
+  amount         Decimal         @db.Decimal(12, 2)
+  refundedAmount Decimal         @default(0) @db.Decimal(12, 2)
+  currency       String
+  status         PaymentStatus   @default(PENDING)
+  transactionRef String?         @unique
+  gatewayPayload Json?
+  failureReason  String?
+  paidAt         DateTime?
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+
+  @@index([bookingId])
+  @@index([customerId])
+  @@index([status])
+}
+
+enum WalletTxnType {
+  TOPUP
+  BOOKING_DEBIT
+  REFUND
+  REWARD
+  ADJUSTMENT
+  TRANSFER_OUT
+  TRANSFER_IN
+  WITHDRAW
+}
+
+model Wallet {
+  id            String            @id @default(cuid())
+  userId        String            @unique
+  user          User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  balance       Decimal           @default(0) @db.Decimal(14, 2)
+  frozenBalance Decimal           @default(0) @db.Decimal(14, 2)
+  currency      String            @default("IQD")
+  totalToppedUp Decimal           @default(0) @db.Decimal(14, 2)
+  transactions  WalletTransaction[]
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+}
+
+model WalletTransaction {
+  id            String       @id @default(cuid())
+  walletId      String
+  wallet        Wallet       @relation(fields: [walletId], references: [id], onDelete: Cascade)
+  userId        String
+  bookingId     String?
+  booking       Booking?     @relation(fields: [bookingId], references: [id])
+  type          WalletTxnType
+  amount        Decimal      @db.Decimal(14, 2)
+  balanceAfter  Decimal      @db.Decimal(14, 2)
+  currency      String
+  reference     String?
+  status        String       @default("COMPLETED")
+  note          String?
+  createdAt     DateTime     @default(now())
+
+  @@index([walletId, createdAt])
+  @@index([bookingId])
+}
+
+// ─────────────────────────────── المكافآت ───────────────────────────────
+
+enum LoyaltyTxnType {
+  EARN
+  REDEEM
+  EXPIRE
+  ADJUST
+  BONUS
+}
+
+model LoyaltyEntry {
+  id          String          @id @default(cuid())
+  userId      String
+  user        User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  bookingId   String?
+  booking     Booking?        @relation(fields: [bookingId], references: [id])
+  type        LoyaltyTxnType
+  points      Int
+  description String?
+  expiresAt   DateTime?
+  createdAt   DateTime        @default(now())
+
+  @@index([userId, createdAt])
+}
+
+// ─────────────────────────────── الكوبونات ───────────────────────────────
+
+enum CouponType {
+  PERCENT
+  FIXED
+}
+
+model Coupon {
+  id             String    @id @default(cuid())
+  code           String    @unique
+  title          String
+  description    String?
+  type           CouponType
+  value          Decimal   @db.Decimal(12, 2)
+  maxDiscount    Decimal?  @db.Decimal(12, 2)
+  minOrderAmount Decimal?  @db.Decimal(12, 2)
+  appliesTo      String[]  @default([])
+  currency       String?
+  usageLimit     Int?
+  usageCount     Int       @default(0)
+  perUserLimit   Int       @default(1)
+  validFrom      DateTime
+  validTo        DateTime
+  isActive       Boolean   @default(true)
+  redemptions    CouponRedemption[]
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  @@index([isActive, validFrom, validTo])
+}
+
+model CouponRedemption {
+  id        String   @id @default(cuid())
+  couponId  String
+  coupon    Coupon   @relation(fields: [couponId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  bookingId String   @unique
+  booking   Booking  @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  discount  Decimal  @db.Decimal(12, 2)
+  createdAt DateTime @default(now())
+
+  @@index([couponId])
+  @@index([userId])
+}
+
+// ─────────────────────────────── التقييمات ───────────────────────────────
+
+enum ReviewStatus {
+  PENDING
+  PUBLISHED
+  REJECTED
+}
+
+model Review {
+  id         String       @id @default(cuid())
+  bookingId  String       @unique
+  booking    Booking      @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  customerId String
+  customer   User         @relation(fields: [customerId], references: [id])
+  propertyId String?
+  property   Property?    @relation(fields: [propertyId], references: [id])
+  rating     Int
+  cleanliness Int?
+  service    Int?
+  location   Int?
+  value      Int?
+  comment    String?
+  vendorReply String?
+  helpfulCount Int          @default(0)
+  status     ReviewStatus @default(PUBLISHED)
+  images     ReviewImage[]
+  createdAt  DateTime     @default(now())
+  updatedAt  DateTime     @updatedAt
+
+  @@index([propertyId, status])
+}
+
+model ReviewImage {
+  id       String @id @default(cuid())
+  reviewId String
+  review   Review @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+  mediaId  String
+  media    Media  @relation(fields: [mediaId], references: [id], onDelete: Cascade)
+}
+
+// ─────────────────────────────── التفضيلات والإشعارات والدعم ───────────────────────────────
+
+model Favorite {
+  id         String   @id @default(cuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  propertyId String
+  property   Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  createdAt  DateTime @default(now())
+
+  @@unique([userId, propertyId])
+}
+
+model Notification {
+  id        String    @id @default(cuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      String
+  title     String
+  body      String?
+  data      Json?
+  isRead    Boolean   @default(false)
+  readAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([userId, isRead])
+}
+
+model SupportTicket {
+  id         String    @id @default(cuid())
+  userId     String
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  subject    String
+  category   String    @default("GENERAL")
+  priority   String    @default("NORMAL")
+  status     String    @default("OPEN")
+  assignedToId String?
+  assignedTo User?     @relation("TicketAssignee", fields: [assignedToId], references: [id])
+  messages   SupportMessage[]
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  @@index([status])
+}
+
+model SupportMessage {
+  id        String        @id @default(cuid())
+  ticketId  String
+  ticket    SupportTicket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  senderId  String
+  body      String
+  isStaff   Boolean       @default(false)
+  createdAt DateTime      @default(now())
+}
+
+// ─────────────────────────────── المحتوى والإدارة ───────────────────────────────
+
+model Banner {
+  id        String   @id @default(cuid())
+  title     String
+  subtitle  String?
+  imageUrl  String
+  linkUrl   String?
+  sortOrder Int      @default(0)
+  isActive  Boolean  @default(true)
+  startsAt  DateTime?
+  endsAt    DateTime?
+  createdAt DateTime @default(now())
+}
+
+model Setting {
+  key       String   @id
+  value     Json
+  updatedAt DateTime @updatedAt
+}
+
+model AdminAction {
+  id        String   @id @default(cuid())
+  actorId   String?
+  actor     User?    @relation(fields: [actorId], references: [id])
+  action    String
+  entity    String
+  entityId  String?
+  payload   Json?
+  ip        String?
+  createdAt DateTime @default(now())
+
+  @@index([entity, entityId])
+}
+
+// ─────────────────────────────── أجهزة الإشعارات ───────────────────────────────
+
+enum DevicePlatform {
+  IOS
+  ANDROID
+  WEB
+}
+
+model DeviceToken {
+  id        String         @id @default(cuid())
+  userId    String
+  user      User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  token     String         @unique
+  platform  DevicePlatform @default(ANDROID)
+  isActive  Boolean        @default(true)
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+
+  @@index([userId, isActive])
+}

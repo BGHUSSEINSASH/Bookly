@@ -1,0 +1,67 @@
+name: bookly_app
+description: "Bookly — منصة حجز المزارع والفنادق والطيران والأنشطة السياحية"
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: ">=3.5.0 <4.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+
+  cupertino_icons: ^1.0.8
+  provider: ^6.1.2
+  http: ^1.2.2
+  shared_preferences: ^2.3.3
+  cached_network_image: ^3.4.1
+  intl: ^0.19.0
+  shimmer: ^3.0.0
+  flutter_map: ^7.0.2
+  latlong2: ^0.9.1
+  url_launcher: ^6.3.1
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/images/
+    - assets/images/cities/
+    - assets/fonts/
+  fonts:
+    - family: ReadexPro
+      fonts:
+        - asset: assets/fonts/ReadexPro-400.ttf
+          weight: 400
+        - asset: assets/fonts/ReadexPro-500.ttf
+          weight: 500
+        - asset: assets/fonts/ReadexPro-600.ttf
+          weight: 600
+        - asset: assets/fonts/ReadexPro-700.ttf
+          weight: 700
+    - family: Tajawal
+      fonts:
+        - asset: assets/fonts/Tajawal-Regular.ttf
+          weight: 400
+        - asset: assets/fonts/Tajawal-Medium.ttf
+          weight: 500
+        - asset: assets/fonts/Tajawal-Bold.ttf
+          weight: 700
+        - asset: assets/fonts/Tajawal-ExtraBold.ttf
+          weight: 800
+    - family: IBMPlexSansArabic
+      fonts:
+        - asset: assets/fonts/IBMPlexSansArabic-Regular.ttf
+          weight: 400
+        - asset: assets/fonts/IBMPlexSansArabic-Medium.ttf
+          weight: 500
+        - asset: assets/fonts/IBMPlexSansArabic-SemiBold.ttf
+          weight: 600
+        - asset: assets/fonts/IBMPlexSansArabic-Bold.ttf
+          weight: 700

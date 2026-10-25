@@ -1,0 +1,41 @@
+node_modules/
+dist/
+build/
+.next/
+out/
+coverage/
+.turbo/
+*.log
+npm-debug.log*
+yarn-error.log*
+
+.env
+.env.local
+.env.*.local
+
+# Flutter / Dart
+.packages
+.flutter-plugins
+.flutter-plugins-dependencies
+.pub-cache/
+.pub/
+.dart_tool/
+build/
+*.iml
+.idea/
+.metadata
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Runtime
+uploads/
+tmp/
+*.pid
+
+# Editor
+.opencode
+.vscode/*
+!.vscode/settings.json
+!.vscode/extensions.json
