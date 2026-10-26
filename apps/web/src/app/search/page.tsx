@@ -11,7 +11,7 @@ export const metadata: Metadata = {
   alternates: { canonical: '/search' },
 };
 
-export const dynamic = 'force-dynamic';
+
 
 async function get<T>(path: string): Promise<T> {
   try {

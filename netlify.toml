@@ -4,9 +4,5 @@
   publish = "apps/web/.next"
 
 [build.environment]
-  NODE_VERSION   = "20"
-  NODE_ENV       = "development"
-  NPM_FLAGS      = "--legacy-peer-deps"
-
-[[plugins]]
-  package = "@netlify/plugin-nextjs"
+  NODE_VERSION            = "20"
+  NEXT_TELEMETRY_DISABLED = "1"

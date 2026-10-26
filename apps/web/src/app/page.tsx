@@ -1,4 +1,4 @@
-import { API_URL } from '@/lib/api';
+﻿import { API_URL } from '@/lib/api';
 import type { PropertyCardData } from '@/components/property-card';
 import { HeroSection } from '@/components/marketing/hero';
 import { CategoryRail } from '@/components/marketing/category-rail';
@@ -14,10 +14,7 @@ import { StatsStrip } from '@/components/marketing/stats-strip';
 import { LoyaltySection } from '@/components/marketing/loyalty-section';
 import { CampaignBanner } from '@/components/marketing/campaign-banner';
 
-// جلب ديناميكي — لا تحسين ثابت لتجنّب التعليق عند بناء الإنتاج
-export const dynamic = 'force-dynamic';
-
-export const metadata = {
+export const revalidate = 60;
   title: 'Bookly — احجز مكاناً يشبهك',
   description:
     'بوكلي: مزارع وفنادق وشاليهات ورحلات وطيران وتأجير سيارات في العراق — بحجز واضح، دفع آمن، ومحفظة تُسترد فورًا عند الإلغاء.',

@@ -12,7 +12,7 @@ export const metadata: Metadata = {
   alternates: { canonical: '/trips' },
 };
 
-export const dynamic = 'force-dynamic';
+
 
 const TRIP_TYPES = [
   { key: '', label: 'الكل' },

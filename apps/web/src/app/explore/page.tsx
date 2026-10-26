@@ -1,4 +1,4 @@
-import Link from 'next/link';
+﻿import Link from 'next/link';
 import Image from 'next/image';
 import {
   Search,
@@ -22,7 +22,7 @@ import { PropertyCard, type PropertyCardData, SectionHeader } from '@/components
 import { CityCard } from '@/components/city-card';
 import { formatMoney, CATEGORY_LABELS } from '@/lib/format';
 
-export const dynamic = 'force-dynamic';
+
 
 export const metadata = {
   title: 'استكشف',

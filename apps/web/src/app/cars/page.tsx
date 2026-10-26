@@ -1,4 +1,4 @@
-import Image from 'next/image';
+﻿import Image from 'next/image';
 import Link from 'next/link';
 import type { Metadata } from 'next';
 import { Users, Luggage, Star, Plane, Car as CarIcon } from 'lucide-react';
@@ -12,7 +12,7 @@ export const metadata: Metadata = {
   alternates: { canonical: '/cars' },
 };
 
-export const dynamic = 'force-dynamic';
+
 
 const CAR_CLASSES = [
   { key: '', label: 'الكل' },
