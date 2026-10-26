@@ -1,4 +1,4 @@
-import Link from 'next/link';
+﻿import Link from 'next/link';
 import type { Metadata } from 'next';
 import { Search, MapPin, CalendarDays, Users, SlidersHorizontal, Star } from 'lucide-react';
 import { API_URL } from '@/lib/api';
@@ -11,7 +11,7 @@ export const metadata: Metadata = {
   alternates: { canonical: '/search' },
 };
 
-export const revalidate = 60;
+export const dynamic = 'force-dynamic';
 
 async function get<T>(path: string): Promise<T> {
   try {

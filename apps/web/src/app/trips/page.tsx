@@ -1,4 +1,4 @@
-import Image from 'next/image';
+﻿import Image from 'next/image';
 import Link from 'next/link';
 import type { Metadata } from 'next';
 import { Clock, Star } from 'lucide-react';
@@ -12,7 +12,7 @@ export const metadata: Metadata = {
   alternates: { canonical: '/trips' },
 };
 
-export const revalidate = 60;
+export const dynamic = 'force-dynamic';
 
 const TRIP_TYPES = [
   { key: '', label: 'الكل' },

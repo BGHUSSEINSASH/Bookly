@@ -1,4 +1,4 @@
-import Link from 'next/link';
+﻿import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { Star, MapPin, Check, Phone, MessageCircle, ArrowRight, Eye, CalendarDays } from 'lucide-react';
 import { API_URL } from '@/lib/api';
@@ -12,7 +12,7 @@ import { ReviewForm } from '@/components/review-form';
 import { GalleryLightbox } from '@/components/gallery-lightbox';
 import { Breadcrumbs } from '@/components/breadcrumbs';
 
-export const revalidate = 60;
+export const dynamic = 'force-dynamic';
 
 // Next قد يمرّر المسار مرمّزًا (%D9%85…) أو مفكوكًا — نفكّ بأمان في الحالتين
 const decodeSlug = (s: string) => {

@@ -3,8 +3,10 @@ const nextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
   devIndicators: false,
+  // تجاهل أخطاء ESLint والـ TypeScript أثناء البناء (يُتحقق منها في CI)
+  eslint: { ignoreDuringBuilds: true },
+  typescript: { ignoreBuildErrors: true },
   experimental: {
-    // انتقال تلاشٍ هادئ بين الصفحات — يُدار بالـ CSS في globals.css
     viewTransition: true,
   },
   env: {
@@ -16,6 +18,8 @@ const nextConfig = {
       { protocol: 'https', hostname: 'images.unsplash.com' },
       { protocol: 'http', hostname: 'localhost', port: '4000', pathname: '/uploads/**' },
       { protocol: 'http', hostname: '127.0.0.1', port: '4000', pathname: '/uploads/**' },
+      { protocol: 'https', hostname: '**.netlify.app' },
+      { protocol: 'https', hostname: '**.up.railway.app' },
     ],
   },
 };

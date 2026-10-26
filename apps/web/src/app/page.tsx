@@ -14,7 +14,8 @@ import { StatsStrip } from '@/components/marketing/stats-strip';
 import { LoyaltySection } from '@/components/marketing/loyalty-section';
 import { CampaignBanner } from '@/components/marketing/campaign-banner';
 
-export const revalidate = 60;
+// جلب ديناميكي — لا تحسين ثابت لتجنّب التعليق عند بناء الإنتاج
+export const dynamic = 'force-dynamic';
 
 export const metadata = {
   title: 'Bookly — احجز مكاناً يشبهك',
@@ -34,7 +35,13 @@ export const metadata = {
 
 async function getFeatured(): Promise<PropertyCardData[]> {
   try {
-    const res = await fetch(`${API_URL}/properties/featured?limit=8`, { next: { revalidate: 60 } });
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 5000);
+    const res = await fetch(`${API_URL}/properties/featured?limit=8`, {
+      signal: controller.signal,
+      next: { revalidate: 60 },
+    });
+    clearTimeout(timeout);
     const json = await res.json();
     const d = json?.data ?? [];
     return (Array.isArray(d) ? d : (d?.items ?? [])) as PropertyCardData[];

@@ -12,7 +12,7 @@ export const metadata: Metadata = {
   alternates: { canonical: '/cars' },
 };
 
-export const revalidate = 60;
+export const dynamic = 'force-dynamic';
 
 const CAR_CLASSES = [
   { key: '', label: 'الكل' },
