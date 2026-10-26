@@ -15,6 +15,8 @@ import { LoyaltySection } from '@/components/marketing/loyalty-section';
 import { CampaignBanner } from '@/components/marketing/campaign-banner';
 
 export const revalidate = 60;
+
+export const metadata = {
   title: 'Bookly — احجز مكاناً يشبهك',
   description:
     'بوكلي: مزارع وفنادق وشاليهات ورحلات وطيران وتأجير سيارات في العراق — بحجز واضح، دفع آمن، ومحفظة تُسترد فورًا عند الإلغاء.',
