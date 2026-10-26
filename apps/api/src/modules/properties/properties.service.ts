@@ -11,6 +11,9 @@ const ACTIVE_BOOKING_STATUSES: BookingStatus[] = ['PENDING', 'CONFIRMED'];
 export class PropertiesService {
   constructor(private readonly prisma: PrismaService) {}
 
+  // كشف عن PrismaService للكنترولر (للـ map endpoint)
+  get prismaClient() { return this.prisma; }
+
   async search(dto: SearchPropertiesDto): Promise<PaginatedResult<any>> {
     const where: Prisma.PropertyWhereInput = {
       status: 'PUBLISHED',

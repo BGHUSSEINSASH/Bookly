@@ -435,11 +435,49 @@ class _TripsScreenState extends State<TripsScreen> {
                     ),
                   ],
                 ),
+                // عرض أقرب موعد وعدد المقاعد
+                if (t['nextDeparture'] != null) ...[
+                  const SizedBox(height: AppSpace.xs),
+                  Row(
+                    children: [
+                      Icon(Icons.calendar_today_outlined, size: 12, color: isDark ? AppColors.darkTextSoft : AppColors.textSoft),
+                      const SizedBox(width: 4),
+                      Text(
+                        _formatDate(t['nextDeparture'].toString()),
+                        style: AppText.labelFaint.copyWith(fontSize: 11),
+                      ),
+                      if ((t['seatsLeft'] as int?) != null && (t['seatsLeft'] as int) <= 5) ...[
+                        const Spacer(),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: Colors.red.shade50,
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Text(
+                            'آخر ${t['seatsLeft']} مقاعد',
+                            style: AppText.labelFaint.copyWith(color: Colors.red.shade600, fontSize: 10),
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ],
               ],
             ),
           ),
         ],
       ),
     );
+  }
+
+  String _formatDate(String isoDate) {
+    try {
+      final d = DateTime.parse(isoDate);
+      const months = ['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
+      return '${d.day} ${months[d.month - 1]}';
+    } catch (_) {
+      return '';
+    }
   }
 }
